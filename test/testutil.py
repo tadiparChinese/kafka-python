@@ -9,13 +9,11 @@ import uuid
 import pytest
 from . import unittest
 
-from kafka import SimpleClient
 from kafka.errors import (
     LeaderNotAvailableError, KafkaTimeoutError, InvalidTopicError,
     NotLeaderForPartitionError, UnknownTopicOrPartitionError,
     FailedPayloadsError
 )
-from kafka.structs import OffsetRequestPayload
 from test.fixtures import random_string, version_str_to_tuple, version as kafka_version #pylint: disable=wrong-import-order
 
 
@@ -84,21 +82,6 @@ def kafka_versions(*versions):
     return real_kafka_versions
 
 
-def current_offset(client, topic, partition, kafka_broker=None):
-    """Get the current offset of a topic's partition
-    """
-    try:
-        offsets, = client.send_offset_request([OffsetRequestPayload(topic,
-                                                                    partition, -1, 1)])
-    except Exception:
-        # XXX: We've seen some UnknownErrors here and can't debug w/o server logs
-        if kafka_broker:
-            kafka_broker.dump_logs()
-        raise
-    else:
-        return offsets.offsets[0]
-
-
 class KafkaIntegrationTestCase(unittest.TestCase):
     create_client = True
     topic = None
@@ -152,18 +135,6 @@ class KafkaIntegrationTestCase(unittest.TestCase):
         if self.create_client:
             self.client.close()
 
-    def current_offset(self, topic, partition):
-        try:
-            offsets, = self.client.send_offset_request([OffsetRequestPayload(topic,
-                                                                             partition, -1, 1)])
-        except Exception:
-            # XXX: We've seen some UnknownErrors here and can't debug w/o server logs
-            self.zk.child.dump_logs()
-            self.server.child.dump_logs()
-            raise
-        else:
-            return offsets.offsets[0]
-
     def msgs(self, iterable):
         return [self.msg(x) for x in iterable]
 
@@ -172,9 +143,6 @@ class KafkaIntegrationTestCase(unittest.TestCase):
             self._messages[s] = '%s-%s-%s' % (s, self.id(), str(uuid.uuid4()))
 
         return self._messages[s].encode('utf-8')
-
-    def key(self, k):
-        return k.encode('utf-8')
 
 
 class Timer(object):
