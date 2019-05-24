@@ -462,10 +462,6 @@ class KafkaConnectionError(KafkaError):
     invalid_metadata = True
 
 
-class ConnectionError(KafkaConnectionError):
-    """Deprecated"""
-
-
 class BufferUnderflowError(KafkaError):
     pass
 
