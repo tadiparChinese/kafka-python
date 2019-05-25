@@ -12,11 +12,11 @@ from kafka.errors import (
 )
 from kafka.structs import TopicPartition, OffsetAndTimestamp
 
-from test.fixtures import random_string, version
-from test.testutil import kafka_versions, assert_message_count, Timer
+from test.fixtures import random_string
+from test.testutil import env_kafka_version, assert_message_count, Timer
 
 
-@pytest.mark.skipif(not version(), reason="No KAFKA_VERSION set")
+@pytest.mark.skipif(not env_kafka_version(), reason="No KAFKA_VERSION set")
 def test_kafka_consumer(kafka_producer, topic, kafka_consumer_factory, send_messages):
     """Test KafkaConsumer"""
     kafka_consumer = kafka_consumer_factory(auto_offset_reset='earliest')
@@ -45,7 +45,7 @@ def test_kafka_consumer(kafka_producer, topic, kafka_consumer_factory, send_mess
     kafka_consumer.close()
 
 
-@pytest.mark.skipif(not version(), reason="No KAFKA_VERSION set")
+@pytest.mark.skipif(not env_kafka_version(), reason="No KAFKA_VERSION set")
 def test_kafka_consumer_unsupported_encoding(
         topic, kafka_producer_factory, kafka_consumer_factory):
     # Send a compressed message
@@ -102,9 +102,8 @@ def test_kafka_consumer__blocking():
     consumer.close()
 
 
-@kafka_versions('>=0.8.1')
+@pytest.mark.skipif(env_kafka_version() < (0, 8, 1), reason="Requires KAFKA_VERSION >= 0.8.1")
 def test_kafka_consumer__offset_commit_resume():
-
     GROUP_ID = random_string(10)
 
     self.send_messages(0, range(0, 100))
@@ -144,7 +143,7 @@ def test_kafka_consumer__offset_commit_resume():
     consumer2.close()
 
 
-@kafka_versions('>=0.10.1')
+@pytest.mark.skipif(env_kafka_version() < (0, 10, 1), reason="Requires KAFKA_VERSION >= 0.10.1")
 def test_kafka_consumer_max_bytes_simple():
     self.send_messages(0, range(100, 200))
     self.send_messages(1, range(200, 300))
@@ -163,8 +162,7 @@ def test_kafka_consumer_max_bytes_simple():
     assert seen_partitions == set(TopicPartition(self.topic, 0), TopicPartition(self.topic, 1))
     consumer.close()
 
-
-@kafka_versions('>=0.10.1')
+@pytest.mark.skipif(env_kafka_version() < (0, 10, 1), reason="Requires KAFKA_VERSION >= 0.10.1")
 def test_kafka_consumer_max_bytes_one_msg():
     # We send to only 1 partition so we don't have parallel requests to 2
     # nodes for data.
@@ -191,7 +189,7 @@ def test_kafka_consumer_max_bytes_one_msg():
     consumer.close()
 
 
-@kafka_versions('>=0.10.1')
+@pytest.mark.skipif(env_kafka_version() < (0, 10, 1), reason="Requires KAFKA_VERSION >= 0.10.1")
 def test_kafka_consumer_offsets_for_time():
     late_time = int(time.time()) * 1000
     middle_time = late_time - 1000
@@ -242,7 +240,7 @@ def test_kafka_consumer_offsets_for_time():
     consumer.close()
 
 
-@kafka_versions('>=0.10.1')
+@pytest.mark.skipif(env_kafka_version() < (0, 10, 1), reason="Requires KAFKA_VERSION >= 0.10.1")
 def test_kafka_consumer_offsets_search_many_partitions():
     tp0 = TopicPartition(self.topic, 0)
     tp1 = TopicPartition(self.topic, 1)
@@ -282,7 +280,7 @@ def test_kafka_consumer_offsets_search_many_partitions():
     consumer.close()
 
 
-@kafka_versions('<0.10.1')
+@pytest.mark.skipif(env_kafka_version() < (0, 10, 1), reason="Requires KAFKA_VERSION >= 0.10.1")
 def test_kafka_consumer_offsets_for_time_old():
     consumer = self.kafka_consumer()
     tp = TopicPartition(self.topic, 0)
@@ -291,7 +289,7 @@ def test_kafka_consumer_offsets_for_time_old():
         consumer.offsets_for_times({tp: int(time.time())})
 
 
-@kafka_versions('>=0.10.1')
+@pytest.mark.skipif(env_kafka_version() < (0, 10, 1), reason="Requires KAFKA_VERSION >= 0.10.1")
 def test_kafka_consumer_offsets_for_times_errors():
     consumer = self.kafka_consumer(fetch_max_wait_ms=200,
                                     request_timeout_ms=500)
